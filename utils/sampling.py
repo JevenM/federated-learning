@@ -6,6 +6,7 @@
 import numpy as np
 from torchvision import datasets, transforms
 
+
 # 数据划分
 def mnist_iid(dataset, num_users):
     print("iid")
@@ -22,8 +23,9 @@ def mnist_iid(dataset, num_users):
     # 基于 clients num 执行循环
     for i in range(num_users):
         # 基于set分配每个 client 的数据，不重复 samples -> set() + np.random.choice(ndarray, int)
-        dict_users[i] = set(np.random.choice(all_idxs, num_items, replace=False))
-        # 从所有数据 samples 的索引列表中删除已经分配的数据 samples
+        dict_users[i] = set(np.random.choice(
+            all_idxs, num_items, replace=False))
+        # 从所有数据样本的索引列表中删除已经分配的数据样本编号
         all_idxs = list(set(all_idxs) - dict_users[i])
     # print(dict_users, len(dict_users[0]))
     # 100个客户端，每个客户端600个数据点
@@ -57,19 +59,21 @@ def mnist_noniid(dataset, num_users):
     idxs_labels = np.vstack((idxs, labels))
     # dim0: 数据 sample 的索引, dim1: 相应的 label
     # 按照标签排序得到对应索引 variable :  <class 'numpy.ndarray'> :  (2, 60000)
-    idxs_labels = idxs_labels[:,idxs_labels[1,:].argsort()]
+    idxs_labels = idxs_labels[:, idxs_labels[1, :].argsort()]
     # 按照标签从 0-9 的数据 sample 索引
     idxs = idxs_labels[0, :]
 
-    # divide and assign
+    # divide and assign，100个用户，每个客户端600个数据，2个组
     for i in range(num_users):
-        # 随机选择 0-199 中的两组数
+        # 随机选择 0-199 中的两个数
         rand_set = set(np.random.choice(idx_shard, 2, replace=False))
         # 删除对应的 rand_set（两个数）
         idx_shard = list(set(idx_shard) - rand_set)
+        # 将600个数分为两次给
         for rand in rand_set:
-            # 每次取 num_imgs 个数， rand最大199，取199*300-200*300的300个数
-            dict_users[i] = np.concatenate((dict_users[i], idxs[rand*num_imgs:(rand+1)*num_imgs]), axis=0)
+            # 从rand索引开始每次取 num_imgs 个数分给一个客户端， rand最大199
+            dict_users[i] = np.concatenate(
+                (dict_users[i], idxs[rand*num_imgs:(rand+1)*num_imgs]), axis=0)
     # print(len(dict_users[0]))
     # print(len(dict_users))
     # dict_users shape: 100*600
@@ -86,7 +90,8 @@ def cifar_iid(dataset, num_users):
     num_items = int(len(dataset)/num_users)
     dict_users, all_idxs = {}, [i for i in range(len(dataset))]
     for i in range(num_users):
-        dict_users[i] = set(np.random.choice(all_idxs, num_items, replace=False))
+        dict_users[i] = set(np.random.choice(
+            all_idxs, num_items, replace=False))
         all_idxs = list(set(all_idxs) - dict_users[i])
     return dict_users
 
@@ -95,7 +100,8 @@ if __name__ == '__main__':
     dataset_train = datasets.MNIST('../data/mnist/', train=True, download=True,
                                    transform=transforms.Compose([
                                        transforms.ToTensor(),
-                                       transforms.Normalize((0.1307,), (0.3081,))
+                                       transforms.Normalize(
+                                           (0.1307,), (0.3081,))
                                    ]))
     num = 100
     d = mnist_noniid(dataset_train, num)
